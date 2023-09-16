@@ -21,7 +21,13 @@ class _CarpoolHomeState extends State<CarpoolHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () {
+          Scaffold.of(context).showBottomSheet<void>(
+            (BuildContext context) {
+              return NewTripModal();
+            },
+          );
+        },
         label: const Text('Create Trip'),
         icon: const Icon(Icons.add),
       ),
@@ -251,6 +257,219 @@ class _CarpoolHomeState extends State<CarpoolHome> {
                   ),
                   SizedBox(height: 16.0),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NewTripModal extends StatefulWidget {
+  const NewTripModal({
+    super.key,
+  });
+
+  @override
+  State<NewTripModal> createState() => _NewTripModalState();
+}
+
+class _NewTripModalState extends State<NewTripModal> {
+  int totalPeople = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.865,
+      decoration: BoxDecoration(
+        color: AppColors.darkTextColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            // text
+            Text(
+              'Create Trip',
+              style: TextStyle(
+                color: AppColors.lightTextColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 35,
+              ),
+            ),
+
+            // Date Selection
+            FractionallySizedBox(
+              widthFactor: 0.75,
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: AppColors.lightTextColor,
+                    width: 1,
+                  ),
+                ),
+                child: Container(
+                  child: Row(
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.calendar,
+                        color: AppColors.lightTextColor,
+                        size: 16,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'June 12, 2021',
+                        style: TextStyle(
+                          color: AppColors.lightTextColor,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Location Selection
+            FractionallySizedBox(
+              widthFactor: 0.75,
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: AppColors.lightTextColor,
+                    width: 1,
+                  ),
+                ),
+                child: Container(
+                  child: Row(
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.mapMarkerAlt,
+                        color: AppColors.lightTextColor,
+                        size: 16,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Tambark Creek Park',
+                        style: TextStyle(
+                          color: AppColors.lightTextColor,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Carpool Limit (Slider)
+            FractionallySizedBox(
+              widthFactor: 0.75,
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: AppColors.lightTextColor,
+                    width: 1,
+                  ),
+                ),
+                child: Container(
+                  child: Row(
+                    children: [
+                      Text(
+                        'Total Members',
+                        style: TextStyle(
+                          color: AppColors.lightTextColor,
+                          fontSize: 16,
+                        ),
+                      ),
+                      // Slider
+                      Expanded(
+                        child: Slider(
+                          value: totalPeople.toDouble(),
+                          min: 1,
+                          max: 10,
+                          divisions: 10,
+                          label: totalPeople.toString(),
+                          onChanged: (double value) {
+                            setState(() {
+                              totalPeople = value.toInt();
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Create Trip Button
+            FractionallySizedBox(
+              widthFactor: 0.65,
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 16,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.lightTextColor,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Container(
+                  child: Center(
+                    child: Text(
+                      'Create Trip',
+                      style: TextStyle(
+                        color: AppColors.darkTextColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
