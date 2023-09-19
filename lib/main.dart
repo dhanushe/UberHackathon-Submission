@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ms_undraw/ms_undraw.dart';
 import 'package:provider/provider.dart';
+import 'package:carpool/gmaps.dart';
 
 import 'google_sign_in.dart';
 
@@ -30,7 +31,7 @@ class MainApp extends StatelessWidget {
           textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
           useMaterial3: true,
         ),
-        home: HomeScreen(),
+        home: Gmaps(),
       ),
     );
   }
