@@ -31,7 +31,7 @@ class MainApp extends StatelessWidget {
           textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
           useMaterial3: true,
         ),
-        home: Gmaps(),
+        home: HomeScreen(),
       ),
     );
   }
