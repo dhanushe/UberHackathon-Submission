@@ -6,6 +6,7 @@ import 'package:location/location.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:carpool/requests.dart';
+import 'package:carpool/database.dart';
 // with the google maps api, draw all markers
 // will replace markers with the faces involved
 // let the user travel in the page!
@@ -30,6 +31,7 @@ List<String> addresses = [
   "Bothell, WA"
 ];
 
+final DatabaseMethods profile = DatabaseMethods();
 // we could create a new polyline here
 // but we already get one in the json file which we'll use!
 
@@ -391,10 +393,11 @@ Container circlesOverlap(Color color) {
               child: CircleAvatar(
                 radius: 30,
                 backgroundColor: color,
+                // only need to fetch once
                 child: CircleAvatar(
-                  radius: 25,
-                  backgroundImage: AssetImage(images[i]),
-                ),
+                    radius: 25, backgroundImage: profile.getProfileImage().image
+                    // AssetImage(images[i])
+                    ),
               ))
       ]));
 }

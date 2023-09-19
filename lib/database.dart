@@ -1,6 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
+// now that this works let's just create a database methods object
 class DatabaseMethods {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
+  // let's try to display profile image in google maps
+  Image getProfileImage() {
+    return Image.network(_firebaseAuth.currentUser!.photoURL!,
+        height: 100, width: 100);
+  }
+
   uploadUserInfo(userMap) async {
     print('calling uploadUserInfo');
 
@@ -30,4 +41,6 @@ class DatabaseMethods {
       print('the error after: $error');
     });
   }
+
+  // fetch profile pics from GoogleAuth
 }
