@@ -30,4 +30,36 @@ class DatabaseMethods {
       print('the error after: $error');
     });
   }
+
+  createNewTrip(String name, String d1, String d2, String d3, int totalPeople,
+      String userEmail, String userName, String photoURL) async {
+    // Create new collection called trips
+    await FirebaseFirestore.instance.collection('trips').add({
+      'address': name,
+      'd1': d1,
+      'd2': d2,
+      'd3': d3,
+      'totalPeople': totalPeople,
+      'creatorEmail': userEmail,
+      'creatorName': userName,
+      'photoURL': photoURL,
+      'members': [userEmail],
+      'decidedDate': '',
+    }).then((value) {
+      print('Trip added');
+      return 'trip added';
+    }).catchError((error) {
+      print(error);
+    });
+  }
+
+  getTrips(String userEmail) async {
+    return FirebaseFirestore.instance
+        .collection('trips')
+        .where('members', arrayContains: userEmail)
+        .snapshots();
+  }
+
 }
+
+

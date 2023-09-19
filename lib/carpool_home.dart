@@ -1,4 +1,6 @@
 import 'package:carpool/AppColors.dart';
+import 'package:carpool/carpoolcard.dart';
+import 'package:carpool/database.dart';
 import 'package:carpool/google_sign_in.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +18,22 @@ class CarpoolHome extends StatefulWidget {
 
 class _CarpoolHomeState extends State<CarpoolHome> {
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  Stream? tripStream;
+  DatabaseMethods databaseMethods = new DatabaseMethods();
+
+  @override
+  void initState() {
+    super.initState();
+    getTripsInfo();
+  }
+
+  getTripsInfo() async {
+    databaseMethods.getTrips(firebaseAuth.currentUser!.email!).then((val) {
+      setState(() {
+        tripStream = val;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,177 +109,69 @@ class _CarpoolHomeState extends State<CarpoolHome> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Search Text Field in Capsule Rounded Shape
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(32),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  border: InputBorder.none,
-                  icon: const Icon(Icons.search),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Search Text Field in Capsule Rounded Shape
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search',
+                    border: InputBorder.none,
+                    icon: const Icon(Icons.search),
+                  ),
                 ),
               ),
-            ),
-            // List of Trips
-            Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                // borderRadius: BorderRadius.circular(16),
-                borderRadius: BorderRadius.circular(30),
-                // Shadow
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.containerShadowColor,
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 16.0),
-                  // Trip Title
-                  Row(
-                    children: [
-                      Text(
-                        'Tambark Creek Trip',
-                        style: TextStyle(
-                          color: AppColors.darkTextColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      // Disclose Icon
-                      const Spacer(),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        color: AppColors.deepPurpleColor,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      // Font Awesome Icon
-                      FaIcon(
-                        FontAwesomeIcons.locationDot,
-                        color: AppColors.lightBlueColor,
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      // Trip Location
-                      Text(
-                        'Tambark Creek Park',
-                        style: TextStyle(
-                          color: AppColors.lightBlueColor,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      // Font Awesome Icon
-                      FaIcon(
-                        FontAwesomeIcons.calendarAlt,
-                        color: AppColors.lightBlueColor,
-                        size: 16,
-                      ),
-
-                      SizedBox(width: 8),
-
-                      // Trip Date
-                      Text(
-                        'June 12, 2021',
-                        style: TextStyle(
-                          color: AppColors.lightBlueColor,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Trip Total People Count
-                  Row(
-                    children: [
-                      // Font Awesome Icon
-                      FaIcon(
-                        FontAwesomeIcons.userGroup,
-                        color: AppColors.lightBlueColor,
-                        size: 16,
-                      ),
-
-                      SizedBox(width: 8),
-
-                      // Trip Date
-                      Text(
-                        '5',
-                        style: TextStyle(
-                          color: AppColors.lightBlueColor,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.slightlyDarkerBGColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    width: 105,
-                    child: Row(
-                      children: [
-                        // Font Awesome Icon
-                        FaIcon(
-                          FontAwesomeIcons.share,
-                          color: AppColors.darkTextColor,
-                          size: 16,
-                        ),
-
-                        SizedBox(width: 8),
-
-                        // Trip Date
-                        Text(
-                          'Share',
-                          style: TextStyle(
-                            color: AppColors.darkTextColor,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 16.0),
-                ],
-              ),
-            ),
-          ],
+              // List of Trips
+              _buildTripList(),
+              // CarpoolCard(),
+              // CarpoolCard(),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTripList() {
+    return StreamBuilder(
+      stream: tripStream,
+      builder: (context, snapshot) {
+        return snapshot.hasData
+            ? ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: snapshot.data.docs.length,
+                itemBuilder: (context, index) {
+                  return CarpoolCard(
+                    address: snapshot.data.docs[index]['address'],
+                    totalPeopleCount: snapshot.data.docs[index]['totalPeople'],
+                    date1: snapshot.data.docs[index]['d1'],
+                    date2: snapshot.data.docs[index]['d2'],
+                    date3: snapshot.data.docs[index]['d3'],
+                    undecidedDate: snapshot.data.docs[index]['decidedDate'],
+                    // tripName: snapshot.data.docs[index]['tripName'],
+                    // tripDate1: snapshot.data.docs[index]['tripDate1'],
+                    // tripDate2: snapshot.data.docs[index]['tripDate2'],
+                    // tripDate3: snapshot.data.docs[index]['tripDate3'],
+                    // tripLocation: snapshot.data.docs[index]['tripLocation'],
+                    // tripMembers: snapshot.data.docs[index]['tripMembers'],
+                    // tripCreator: snapshot.data.docs[index]['tripCreator'],
+                    // tripCreatorName:
+                    //     snapshot.data.docs[index]['tripCreatorName'],
+                    // tripCreatorPhoto:
+                    //     snapshot.data.docs[index]['tripCreatorPhoto'],
+                  );
+                },
+              )
+            : Container();
+      },
     );
   }
 }
@@ -277,6 +187,12 @@ class NewTripModal extends StatefulWidget {
 
 class _NewTripModalState extends State<NewTripModal> {
   int totalPeople = 5;
+  DateTime? selectedDate1;
+  DateTime? selectedDate2;
+  DateTime? selectedDate3;
+  DatabaseMethods databaseMethods = new DatabaseMethods();
+  TextEditingController tripNameController = new TextEditingController();
+  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -307,47 +223,191 @@ class _NewTripModalState extends State<NewTripModal> {
               ),
             ),
 
+            // Label that says select possible dates for trip
+            // Text(
+            //   'Select Possible Dates',
+            //   style: TextStyle(
+            //     color: AppColors.lightTextColor.withOpacity(0.6),
+            //     fontSize: 16,
+            //   ),
+            // ),
+
             // Date Selection
-            FractionallySizedBox(
-              widthFactor: 0.75,
-              child: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: AppColors.lightTextColor,
-                    width: 1,
-                  ),
-                ),
+            GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2024),
+                );
+                if (pickedDate != null && pickedDate != selectedDate1)
+                  setState(() {
+                    selectedDate1 = pickedDate;
+                  });
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.75,
                 child: Container(
-                  child: Row(
-                    children: [
-                      FaIcon(
-                        FontAwesomeIcons.calendar,
-                        color: AppColors.lightTextColor,
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'June 12, 2021',
-                        style: TextStyle(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: AppColors.lightTextColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.calendar,
                           color: AppColors.lightTextColor,
-                          fontSize: 16,
+                          size: 16,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 8),
+                        Text(
+                          (selectedDate1 == null)
+                              ? 'Select Best Date'
+                              // Format the Selected String to MONTH DAY YEAR
+                              : '${selectedDate1!.month}/${selectedDate1!.day} ${selectedDate1!.year}',
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
+
+            GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2024),
+                );
+                if (pickedDate != null && pickedDate != selectedDate2)
+                  setState(() {
+                    selectedDate2 = pickedDate;
+                  });
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.75,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: AppColors.lightTextColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.calendar,
+                          color: AppColors.lightTextColor,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          (selectedDate2 == null)
+                              ? 'Select 2nd Best Date'
+                              // Format the Selected String to MONTH DAY YEAR
+                              : '${selectedDate2!.month}/${selectedDate2!.day} ${selectedDate2!.year}',
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2024),
+                );
+                if (pickedDate != null && pickedDate != selectedDate3)
+                  setState(() {
+                    selectedDate3 = pickedDate;
+                  });
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.75,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: AppColors.lightTextColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.calendar,
+                          color: AppColors.lightTextColor,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          (selectedDate3 == null)
+                              ? 'Select 3rd Best Date'
+                              // Format the Selected String to MONTH DAY YEAR
+                              : '${selectedDate3!.month}/${selectedDate3!.day} ${selectedDate3!.year}',
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 20),
 
             // Location Selection
             FractionallySizedBox(
@@ -378,13 +438,27 @@ class _NewTripModalState extends State<NewTripModal> {
                         size: 16,
                       ),
                       SizedBox(width: 8),
-                      Text(
-                        'Tambark Creek Park',
-                        style: TextStyle(
-                          color: AppColors.lightTextColor,
-                          fontSize: 16,
+                      // TextField to Enter Location
+                      Expanded(
+                        child: TextField(
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                          controller: tripNameController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter Location',
+                            border: InputBorder.none,
+                          ),
                         ),
                       ),
+                      // Text(
+                      //   'Tambark Creek Park',
+                      //   style: TextStyle(
+                      //     color: AppColors.lightTextColor,
+                      //     fontSize: 16,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -443,29 +517,59 @@ class _NewTripModalState extends State<NewTripModal> {
             ),
 
             // Create Trip Button
-            FractionallySizedBox(
-              widthFactor: 0.65,
-              child: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 16,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.lightTextColor,
-                  borderRadius: BorderRadius.circular(15),
-                ),
+            GestureDetector(
+              onTap: () {
+                databaseMethods.createNewTrip(
+                  tripNameController.text,
+                  // in the format MONTH/DAY/YEAR
+                  selectedDate1!.month.toString() +
+                      '/' +
+                      selectedDate1!.day.toString() +
+                      '/' +
+                      selectedDate1!.year.toString(),
+                  selectedDate2!.month.toString() +
+                      // in the format MONTH/DAY/YEAR
+                      '/' +
+                      selectedDate2!.day.toString() +
+                      '/' +
+                      selectedDate2!.year.toString(),
+                  selectedDate3!.month.toString() +
+                      // in the format MONTH/DAY/YEAR
+                      '/' +
+                      selectedDate3!.day.toString() +
+                      '/' +
+                      selectedDate3!.year.toString(),
+                  totalPeople,
+                  firebaseAuth.currentUser!.email!,
+                  firebaseAuth.currentUser!.displayName!,
+                  firebaseAuth.currentUser!.photoURL!,
+                );
+                Navigator.pop(context);
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.65,
                 child: Container(
-                  child: Center(
-                    child: Text(
-                      'Create Trip',
-                      style: TextStyle(
-                        color: AppColors.darkTextColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 16,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightTextColor,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Container(
+                    child: Center(
+                      child: Text(
+                        'Create Trip',
+                        style: TextStyle(
+                          color: AppColors.darkTextColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
