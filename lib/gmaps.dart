@@ -213,7 +213,8 @@ class _GmapsState extends State<Gmaps> {
             markerId: MarkerId(addresses[i]),
             position: loc,
           ),
-          child: _customMarker(images[i])));
+          // will need to fetch individually via url
+          child: _customMarker(profile.getProfileImage())));
     }
 
     return _customMarkers;
@@ -261,7 +262,7 @@ class _GmapsState extends State<Gmaps> {
   }
 
   // this is our custom marker!
-  _customMarker(String image) {
+  _customMarker(Image image) {
     // create a circle avatar
     return Align(
       child: CircleAvatar(
@@ -269,7 +270,7 @@ class _GmapsState extends State<Gmaps> {
         backgroundColor: Colors.white,
         child: CircleAvatar(
           radius: 25,
-          backgroundImage: AssetImage(image),
+          backgroundImage: image.image,
         ),
       ),
     );
@@ -395,7 +396,9 @@ Container circlesOverlap(Color color) {
                 backgroundColor: color,
                 // only need to fetch once
                 child: CircleAvatar(
-                    radius: 25, backgroundImage: profile.getProfileImage().image
+                    // actually have to fetch urls here
+                    radius: 25,
+                    backgroundImage: profile.getProfileImage().image
                     // AssetImage(images[i])
                     ),
               ))
