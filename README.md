@@ -32,7 +32,7 @@ The main features of the app include:
 1. Join upcoming carpools using a 4-digit pincode
 2. Create new carpools and invite others
 3. Enter three possible dates that you can make it to the trip
-4. Generate a plan based on the largest overlaps in availability
+4. Generate a plan based on the largest overlaps in availability (when2meet)
 5. Calculate the most efficient route through all houses and the destination
 
 
