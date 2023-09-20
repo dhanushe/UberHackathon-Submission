@@ -1,6 +1,6 @@
 <div align=center>
-<img src="https://github.com/AudioKit/Cookbook/raw/main/Cookbook/Cookbook/Assets.xcassets/audiokit-icon.imageset/audiokit-icon.png" width="20%"/>
-  
+<img src="https://github.com/dhanushe/UberHackathon-Submission/blob/8701091ce13a3f785250162c4baaa091ee787bb6/AppIcon.png" width="20%"/>
+
 # Carpoolz
 Plan trips, carpool with others, never miss another chance to socialize!
 
