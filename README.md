@@ -7,3 +7,30 @@ Plan trips, carpool with others, never miss another chance to socialize!
 [![License](https://img.shields.io/cocoapods/l/AudioKit)](https://github.com/AudioKit/AudioKit/blob/main/LICENSE)
 
 </div>
+
+## Prerequisites
+Before you can run Carpoolz, you'll need to have the following installed:
+
+- Flutter SDK
+- An IDE/editor such as Android Studio, VS Code etc.
+- An emulator or physical device to run the app
+  - Install Xcode on Mac and Android Studio on Windows
+
+## Installation
+1. Clone the repository
+```git clone https://github.com/<your_username>/carpoolz.git```
+2. Navigate to the project directory
+```cd carpoolz```
+3. Get the dependencies
+```flutter pub get```
+4. Run the app
+```flutter run```
+
+# Usage
+The main features of the app include:
+
+1. Join upcoming carpools using a 4-digit pincode
+2. Create new carpools and invite others
+3. Enter three possible dates that you can make it to the trip
+4. Generate a plan based on the largest overlaps in availability
+5. Calculate the most efficient route through all houses and the destination
