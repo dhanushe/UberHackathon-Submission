@@ -13,6 +13,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:pinput/pinput.dart';
 
+// convenience method to convert date to string
 String convertDateToString(DateTime? selectedDate) {
   return selectedDate!.month.toString() +
       '/' +
@@ -21,6 +22,11 @@ String convertDateToString(DateTime? selectedDate) {
       selectedDate!.year.toString();
 }
 
+/*
+Enables user to see and interact with all trips. 
+Also enables abilities for user to log out, join, 
+and even create a trip
+ */
 class CarpoolHome extends StatefulWidget {
   CarpoolHome({Key? key}) : super(key: key);
 
@@ -40,6 +46,8 @@ class _CarpoolHomeState extends State<CarpoolHome> {
     getTripsInfo();
   }
 
+  // retrieves user's trips
+  // to display on screen
   getTripsInfo() async {
     databaseMethods.getTrips(firebaseAuth.currentUser!.email!).then((val) {
       setState(() {
@@ -51,6 +59,7 @@ class _CarpoolHomeState extends State<CarpoolHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // a button to let the user create a new trip
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Scaffold.of(context).showBottomSheet<void>(
@@ -123,6 +132,7 @@ class _CarpoolHomeState extends State<CarpoolHome> {
             ),
           ),
 
+          // icon button to log out of account
           IconButton(
             onPressed: () {
               final provider =
@@ -152,6 +162,8 @@ class _CarpoolHomeState extends State<CarpoolHome> {
           ),
         ],
       ),
+      // a quick search bar
+      // will later implement to easily search for trips
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -183,6 +195,11 @@ class _CarpoolHomeState extends State<CarpoolHome> {
     );
   }
 
+  /*
+  Creates display of trip list
+  by fetching trip data 
+  in real-time
+  */
   Widget _buildTripList() {
     return StreamBuilder(
       stream: tripStream,
@@ -194,8 +211,7 @@ class _CarpoolHomeState extends State<CarpoolHome> {
                 itemCount: snapshot.data.docs.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    // notice we only care about dates
-                    // check trip's dateDecided value
+                    // this on tap should only be for generate plan
                     onTap: () {
                       // notice that address is destination
                       List<dynamic> locations = [];
@@ -230,22 +246,23 @@ class _CarpoolHomeState extends State<CarpoolHome> {
                       }
                     },
                     child: CarpoolCard(
-                      address: snapshot.data.docs[index]['address'],
-                      totalPeopleCount: snapshot.data.docs[index]
-                          ['totalPeople'],
-                      undecidedDate: snapshot.data.docs[index]['decidedDate'],
-                      // tripName: snapshot.data.docs[index]['tripName'],
-                      // tripDate1: snapshot.data.docs[index]['tripDate1'],
-                      // tripDate2: snapshot.data.docs[index]['tripDate2'],
-                      // tripDate3: snapshot.data.docs[index]['tripDate3'],
-                      // tripLocation: snapshot.data.docs[index]['tripLocation'],
-                      // tripMembers: snapshot.data.docs[index]['tripMembers'],
-                      // tripCreator: snapshot.data.docs[index]['tripCreator'],
-                      // tripCreatorName:
-                      //     snapshot.data.docs[index]['tripCreatorName'],
-                      // tripCreatorPhoto:
-                      //     snapshot.data.docs[index]['tripCreatorPhoto'],
-                    ),
+                        address: snapshot.data.docs[index]['address'],
+                        totalPeopleCount: snapshot.data.docs[index]
+                            ['totalPeople'],
+                        undecidedDate: snapshot.data.docs[index]['decidedDate'],
+                        code: snapshot.data.docs[index]['docId']
+                        // tripName: snapshot.data.docs[index]['tripName'],
+                        // tripDate1: snapshot.data.docs[index]['tripDate1'],
+                        // tripDate2: snapshot.data.docs[index]['tripDate2'],
+                        // tripDate3: snapshot.data.docs[index]['tripDate3'],
+                        // tripLocation: snapshot.data.docs[index]['tripLocation'],
+                        // tripMembers: snapshot.data.docs[index]['tripMembers'],
+                        // tripCreator: snapshot.data.docs[index]['tripCreator'],
+                        // tripCreatorName:
+                        //     snapshot.data.docs[index]['tripCreatorName'],
+                        // tripCreatorPhoto:
+                        //     snapshot.data.docs[index]['tripCreatorPhoto'],
+                        ),
                   );
                 },
               )
@@ -255,6 +272,11 @@ class _CarpoolHomeState extends State<CarpoolHome> {
   }
 }
 
+/*
+Design when you click the new trip button 
+Also stores user inputs in database 
+to later be used for availability + route optimizations
+*/
 class NewTripModal extends StatefulWidget {
   const NewTripModal({
     super.key,
@@ -616,6 +638,10 @@ class _NewTripModalState extends State<NewTripModal> {
   }
 }
 
+/*
+Similar to new trip
+Allows you to join trip via a 6-digit code
+*/
 class JoinTripModal extends StatefulWidget {
   const JoinTripModal({super.key});
 
@@ -900,6 +926,10 @@ class _JoinTripModalState extends State<JoinTripModal> {
     );
   }
 
+  /*
+  builds the widget
+  for user to enter 4-digit code
+  */
   Widget _buildPinput() {
     return Pinput(
         defaultPinTheme: PinTheme(

@@ -1,4 +1,5 @@
 // AppColors.dart
+// stores colors for convenience
 
 import 'package:flutter/material.dart';
 

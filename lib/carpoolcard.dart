@@ -1,18 +1,22 @@
 import 'package:carpool/AppColors.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class CarpoolCard extends StatelessWidget {
+  // pass in carpool card code
   CarpoolCard({
     super.key,
     required this.address,
     required this.totalPeopleCount,
     required this.undecidedDate,
+    required this.code,
   });
 
   String address;
   int totalPeopleCount = 5;
   String undecidedDate;
+  String code;
 
   @override
   Widget build(BuildContext context) {
@@ -131,37 +135,42 @@ class CarpoolCard extends StatelessWidget {
             ],
           ),
 
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 16),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.slightlyDarkerBGColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            width: 105,
-            child: Row(
-              children: [
-                // Font Awesome Icon
-                FaIcon(
-                  FontAwesomeIcons.share,
-                  color: AppColors.darkTextColor,
-                  size: 16,
-                ),
-
-                SizedBox(width: 8),
-
-                // Trip Date
-                Text(
-                  'Share',
-                  style: TextStyle(
+          GestureDetector(
+            onTap: () {
+              Share.share("Go join my trip with the code: ${code}");
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.slightlyDarkerBGColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              width: 105,
+              child: Row(
+                children: [
+                  // Font Awesome Icon
+                  FaIcon(
+                    FontAwesomeIcons.share,
                     color: AppColors.darkTextColor,
-                    fontSize: 16,
+                    size: 16,
                   ),
-                ),
-              ],
+
+                  SizedBox(width: 8),
+
+                  // Trip Date
+                  Text(
+                    'Share',
+                    style: TextStyle(
+                      color: AppColors.darkTextColor,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(height: 16.0),
