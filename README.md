@@ -23,7 +23,11 @@ Before you can run Carpoolz, you'll need to have the following installed:
 ```cd carpoolz```
 3. Get the dependencies
 ```flutter pub get```
-4. Run the app
+4. Navigate to the ios directory
+```cd ios```
+5. Get more dependencies
+```pod install```
+7. Run the app
 ```flutter run```
 
 ## Usage
