@@ -1,8 +1,50 @@
+import 'package:carpool/database.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+// in firebase store the list of addresses (first user, other users, destination)
+// reordered by waypoint index
+// for every trip it'll be same
+
+// order addresses again when a new user is added
+// locations should be the entire list
+void orderAddresses(List<dynamic> locations, String id) async {
+  DatabaseMethods database = DatabaseMethods();
+  // origin, destination
+  // or origin, waypoint, destination
+  if (locations.length <= 3) {
+    database.addOrderedLocations(locations, id);
+  }
+  // otherwise compute best waypoints and then create list
+  else {
+    List<String> orderedLocations = [];
+
+    print("Locations: " + locations.toString());
+    dynamic waypoints = await getBestWaypoints(locations);
+    // will help us get locations!
+    print("Waypoints: " + waypoints.toString());
+
+    // just needed that 0 in the middle
+    List<dynamic> idxes =
+        waypoints["routes"][0]["optimizedIntermediateWaypointIndex"];
+
+    // waypoints are in middle
+    List<dynamic> waypointAdds = locations.sublist(1, locations.length - 1);
+    orderedLocations.add(locations[0]);
+
+    for (dynamic id in idxes) {
+      orderedLocations.add(waypointAdds[id]);
+    }
+
+    orderedLocations.add(locations.last);
+
+    // now we can just say
+    database.addOrderedLocations(orderedLocations, id);
+  }
+}
+
 // create a map for string and dynamic
-List<Map<String, String>> genWaypoints(List<String> adds) {
+List<Map<String, String>> genWaypoints(List<dynamic> adds) {
   List<Map<String, String>> waypoints = [];
 
   for (int i = 0; i < adds.length; i++) {
@@ -18,10 +60,21 @@ List<Map<String, String>> genWaypoints(List<String> adds) {
 
 // another request
 // uses ordering of waypoints and makes decision
-void getRouteMatrix(List<String> adds) async {
+
+// we actually don't have to specify departure time
+Future<dynamic> getRouteMatrix(List<dynamic> adds, String depart) async {
   final String apiUrl =
       'https://routes.googleapis.com/directions/v2:computeRoutes';
   final String apiKey = 'AIzaSyBoPYbDnCI7pndyPWh04s_FHnxUk8sBO5s';
+
+  String correctDateFormat = "";
+  List<String> times = depart.split("/");
+
+  correctDateFormat = times[2] + "-" + times[0] + "-" + times[1];
+  print('date format: ' + correctDateFormat.toString());
+
+  //get month/day/year
+  // year-month-day
 
   final Map<String, dynamic> requestBody = {
     "origin": {"address": adds[0]},
@@ -34,9 +87,9 @@ void getRouteMatrix(List<String> adds) async {
       {"address": "McLaren+Vale,SA"}
     ]*/
     ,
-    "travelMode": "DRIVE",
     "routingPreference": "TRAFFIC_AWARE",
-    "departureTime": "2023-10-15T15:01:23.045123456Z",
+    // here we would have to change departure time
+    "departureTime": "${correctDateFormat}T12:00:0.045123456Z",
     "computeAlternativeRoutes": false,
     "routeModifiers": {
       "avoidTolls": false,
@@ -62,7 +115,10 @@ void getRouteMatrix(List<String> adds) async {
 
   if (response.statusCode == 200) {
     // Request was successful, handle the response data here
-    // final jsonResponse = jsonDecode(response.body);
+    print('route body:' + response.body.toString());
+    final jsonResponse = jsonDecode(response.body);
+    print('decoded: ' + jsonResponse.toString());
+    return jsonResponse;
 
     print('Response: ${response.body}');
   } else {
@@ -73,7 +129,8 @@ void getRouteMatrix(List<String> adds) async {
 }
 
 // ideas is that adds is ordered so origin, waypoints, then destination
-void getBestWaypoints(List<String> adds) async {
+// since it's future maybe await
+Future<dynamic> getBestWaypoints(List<dynamic> adds) async {
   print("Address: " + adds.toString());
   final String apiUrl =
       'https://routes.googleapis.com/directions/v2:computeRoutes';
@@ -110,10 +167,12 @@ void getBestWaypoints(List<String> adds) async {
   );
 
   // List<int> idxes = [0, 1, 2, 3];
-
+  print(response.body);
   if (response.statusCode == 200) {
     // Request was successful, handle the response data here
     final jsonResponse = jsonDecode(response.body);
+    // want something dynamic
+    return jsonResponse;
 
     // will be used and passed to the function where we can actually get order
     //List<int> idxes = jsonResponse['routes']['optimizedIntermediateWaypointIndex'];

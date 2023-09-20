@@ -1,13 +1,25 @@
 import 'package:carpool/AppColors.dart';
 import 'package:carpool/carpoolcard.dart';
 import 'package:carpool/database.dart';
+import 'package:carpool/gmaps.dart';
 import 'package:carpool/google_sign_in.dart';
+import 'package:carpool/threebest.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:pinput/pinput.dart';
+
+String convertDateToString(DateTime? selectedDate) {
+  return selectedDate!.month.toString() +
+      '/' +
+      selectedDate!.day.toString() +
+      '/' +
+      selectedDate!.year.toString();
+}
 
 class CarpoolHome extends StatefulWidget {
   CarpoolHome({Key? key}) : super(key: key);
@@ -19,11 +31,12 @@ class CarpoolHome extends StatefulWidget {
 class _CarpoolHomeState extends State<CarpoolHome> {
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   Stream? tripStream;
-  DatabaseMethods databaseMethods = new DatabaseMethods();
+  DatabaseMethods databaseMethods = DatabaseMethods();
 
   @override
   void initState() {
     super.initState();
+    print(firebaseAuth.currentUser!.email!);
     getTripsInfo();
   }
 
@@ -79,6 +92,37 @@ class _CarpoolHomeState extends State<CarpoolHome> {
         ),
 
         actions: [
+          // icon button for joining a trip
+          IconButton(
+            onPressed: () {
+              Scaffold.of(context).showBottomSheet<void>(
+                (BuildContext context) {
+                  return JoinTripModal();
+                },
+              );
+            },
+            icon: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.containerShadowColor,
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                FeatherIcons.plus,
+                color: AppColors.darkTextColor,
+              ),
+            ),
+          ),
+
           IconButton(
             onPressed: () {
               final provider =
@@ -150,13 +194,45 @@ class _CarpoolHomeState extends State<CarpoolHome> {
                 itemCount: snapshot.data.docs.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
+                    // notice we only care about dates
+                    // check trip's dateDecided value
+                    onTap: () {
+                      // notice that address is destination
+                      List<dynamic> locations = [];
+
+                      // locations will then obvi be in order
+                      locations = snapshot.data.docs[index]['locations'];
+                      locations.add(snapshot.data.docs[index]['address']);
+
+                      if (snapshot.data.docs[index]['decidedDate'] == '') {
+                        // navigator.push
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              // yay, it works!
+                              // now let's work on finding the optimal dates (highest + tied)
+                              // and tell me the traffic time!
+
+                              // also get number of minutes on that day
+                              builder: (context) => ThreeBest(
+                                  dates: snapshot.data.docs[index]['dates'],
+                                  locations: locations,
+                                  id: snapshot.data.docs[index].id)),
+                        );
+                      } else {
+                        // if plan is already generated
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  Gmaps(id: snapshot.data.docs[index].id)),
+                        );
+                      }
+                    },
                     child: CarpoolCard(
                       address: snapshot.data.docs[index]['address'],
                       totalPeopleCount: snapshot.data.docs[index]
                           ['totalPeople'],
-                      date1: snapshot.data.docs[index]['d1'],
-                      date2: snapshot.data.docs[index]['d2'],
-                      date3: snapshot.data.docs[index]['d3'],
                       undecidedDate: snapshot.data.docs[index]['decidedDate'],
                       // tripName: snapshot.data.docs[index]['tripName'],
                       // tripDate1: snapshot.data.docs[index]['tripDate1'],
@@ -195,6 +271,7 @@ class _NewTripModalState extends State<NewTripModal> {
   DateTime? selectedDate3;
   DatabaseMethods databaseMethods = new DatabaseMethods();
   TextEditingController tripNameController = new TextEditingController();
+  TextEditingController locationNameController = new TextEditingController();
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   @override
@@ -413,60 +490,10 @@ class _NewTripModalState extends State<NewTripModal> {
             SizedBox(height: 20),
 
             // Location Selection
-            FractionallySizedBox(
-              widthFactor: 0.75,
-              child: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: AppColors.lightTextColor,
-                    width: 1,
-                  ),
-                ),
-                child: Container(
-                  child: Row(
-                    children: [
-                      FaIcon(
-                        FontAwesomeIcons.mapMarkerAlt,
-                        color: AppColors.lightTextColor,
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      // TextField to Enter Location
-                      Expanded(
-                        child: TextField(
-                          style: TextStyle(
-                            color: AppColors.lightTextColor,
-                            fontSize: 16,
-                          ),
-                          controller: tripNameController,
-                          decoration: InputDecoration(
-                            hintText: 'Enter Location',
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                      // Text(
-                      //   'Tambark Creek Park',
-                      //   style: TextStyle(
-                      //     color: AppColors.lightTextColor,
-                      //     fontSize: 16,
-                      //   ),
-                      // ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+
+            // for this we need two parameters, text & controller
+            enterLocation("Enter destination: ", tripNameController),
+            enterLocation("Enter location: ", locationNameController),
 
             // Carpool Limit (Slider)
             FractionallySizedBox(
@@ -522,8 +549,11 @@ class _NewTripModalState extends State<NewTripModal> {
             // Create Trip Button
             GestureDetector(
               onTap: () {
+                // for create new trip we'll have to add whatever they input
+                // also add a docId that is differnent from all before
                 databaseMethods.createNewTrip(
                   tripNameController.text,
+                  locationNameController.text,
                   // in the format MONTH/DAY/YEAR
                   selectedDate1!.month.toString() +
                       '/' +
@@ -584,4 +614,366 @@ class _NewTripModalState extends State<NewTripModal> {
       ),
     );
   }
+}
+
+class JoinTripModal extends StatefulWidget {
+  const JoinTripModal({super.key});
+
+  @override
+  State<JoinTripModal> createState() => _JoinTripModalState();
+}
+
+class _JoinTripModalState extends State<JoinTripModal> {
+  DatabaseMethods databaseMethods = DatabaseMethods();
+  // Date
+  DateTime? selectedDate1;
+  DateTime? selectedDate2;
+  DateTime? selectedDate3;
+
+  // okay so we have an entered code -> basically yea we need to generate a unique identifier
+  //
+  int? enteredCode;
+  // join controller.txt
+  TextEditingController joinController = new TextEditingController();
+  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: AppColors.darkTextColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            // text
+            Text(
+              'Join a Trip',
+              style: TextStyle(
+                color: AppColors.lightTextColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 35,
+              ),
+            ),
+
+            // Pinput
+            _buildPinput(),
+
+            SizedBox(height: 20),
+
+            enterLocation("Enter location: ", joinController),
+
+            SizedBox(height: 20),
+
+            GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2024),
+                );
+                if (pickedDate != null && pickedDate != selectedDate1)
+                  setState(() {
+                    selectedDate1 = pickedDate;
+                  });
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.75,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: AppColors.lightTextColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.calendar,
+                          color: AppColors.lightTextColor,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          (selectedDate1 == null)
+                              ? 'Select Best Date'
+                              // Format the Selected String to MONTH DAY YEAR
+                              : '${selectedDate1!.month}/${selectedDate1!.day} ${selectedDate1!.year}',
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2024),
+                );
+                if (pickedDate != null && pickedDate != selectedDate2)
+                  setState(() {
+                    selectedDate2 = pickedDate;
+                  });
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.75,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: AppColors.lightTextColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.calendar,
+                          color: AppColors.lightTextColor,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          (selectedDate2 == null)
+                              ? 'Select 2nd Best Date'
+                              // Format the Selected String to MONTH DAY YEAR
+                              : '${selectedDate2!.month}/${selectedDate2!.day} ${selectedDate2!.year}',
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2024),
+                );
+                if (pickedDate != null && pickedDate != selectedDate3)
+                  setState(() {
+                    selectedDate3 = pickedDate;
+                  });
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.75,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: AppColors.lightTextColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.calendar,
+                          color: AppColors.lightTextColor,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          (selectedDate3 == null)
+                              ? 'Select 3rd Best Date'
+                              // Format the Selected String to MONTH DAY YEAR
+                              : '${selectedDate3!.month}/${selectedDate3!.day} ${selectedDate3!.year}',
+                          style: TextStyle(
+                            color: AppColors.lightTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // awesome, should work!
+            GestureDetector(
+              onTap: () {
+                //
+                databaseMethods.addMembersToTrip(
+                    // what is the id they put in
+                    enteredCode!,
+                    joinController.text,
+                    firebaseAuth.currentUser!.email!,
+                    firebaseAuth.currentUser!.displayName!,
+                    firebaseAuth.currentUser!.photoURL!,
+                    convertDateToString(selectedDate1),
+                    convertDateToString(selectedDate2),
+                    convertDateToString(selectedDate3));
+              },
+              child: FractionallySizedBox(
+                widthFactor: 0.65,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 16,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightTextColor,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Container(
+                    child: Center(
+                      child: Text(
+                        'Join Trip',
+                        style: TextStyle(
+                          color: AppColors.darkTextColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPinput() {
+    return Pinput(
+        defaultPinTheme: PinTheme(
+          width: 56,
+          height: 56,
+          textStyle: TextStyle(
+              fontSize: 20,
+              color: Color.fromRGBO(255, 255, 255, 1),
+              fontWeight: FontWeight.w600),
+          decoration: BoxDecoration(
+            border: Border.all(color: Color.fromRGBO(234, 239, 243, 1)),
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        onCompleted: (pin) {
+          enteredCode = int.parse(pin);
+        });
+  }
+}
+
+FractionallySizedBox enterLocation(
+    String text, TextEditingController controller) {
+  return FractionallySizedBox(
+    widthFactor: 0.75,
+    child: Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: AppColors.lightTextColor,
+          width: 1,
+        ),
+      ),
+      child: Container(
+        child: Row(
+          children: [
+            FaIcon(
+              FontAwesomeIcons.mapMarkerAlt,
+              color: AppColors.lightTextColor,
+              size: 16,
+            ),
+            SizedBox(width: 8),
+            // TextField to Enter Location
+            Expanded(
+              child: TextField(
+                style: TextStyle(
+                  color: AppColors.lightTextColor,
+                  fontSize: 16,
+                ),
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'Enter Destination: ',
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+            // Text(
+            //   'Tambark Creek Park',
+            //   style: TextStyle(
+            //     color: AppColors.lightTextColor,
+            //     fontSize: 16,
+            //   ),
+            // ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

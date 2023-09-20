@@ -12,37 +12,12 @@ import 'package:carpool/database.dart';
 // let the user travel in the page!
 // whenever reaches the friend's house send a message
 
-List<String> images = [
-  "assets/akshay.jpeg",
-  "assets/emma.jpeg",
-  "assets/johnny.jpeg",
-  "assets/srk.webp",
-  "assets/taylor.webp"
-];
-
-List<String> names = ["Akshay", "Emma", "Johnny", "Sharukh", "Taylor"];
-
-// my guess is we need to add + in between
-List<String> addresses = [
-  "Santa Clara, CA",
-  "Seattle, WA",
-  "Santa+Cruz, CA",
-  "Woodinville, WA",
-  "Bothell, WA"
-];
+// fetch images: done
+// fetch names: done
+// fetch addresses: done
+// fetch geocoded addresses
 
 final DatabaseMethods profile = DatabaseMethods();
-// we could create a new polyline here
-// but we already get one in the json file which we'll use!
-
-// first location is wherever you are
-List<LatLng> locations = [
-  LatLng(37.33, -122.0),
-  LatLng(38, -122.0),
-  LatLng(37.1, -122),
-  LatLng(37.3, -122.0),
-  LatLng(37.5, -122.0)
-];
 
 void launchURL(String url) async {
   if (await canLaunchUrlString(url)) {
@@ -52,7 +27,7 @@ void launchURL(String url) async {
   }
 }
 
-String generateNames(List<String> names) {
+String generateNames(List<dynamic> names) {
   String nameString = "";
   for (int i = 0; i < names.length; i += 1) {
     nameString += names[i];
@@ -64,7 +39,7 @@ String generateNames(List<String> names) {
 }
 
 // use with direction button
-String generateUrl(List<String> adds) {
+String generateUrl(List<dynamic> adds) {
   String mapsUrl = "https://www.google.com/maps/dir/?api=1";
   // List<String> waypoints = adds.sublist(1, adds.length - 1);
   bool waypoints = false;
@@ -113,7 +88,8 @@ String generateUrl(List<String> adds) {
 }
 
 class Gmaps extends StatefulWidget {
-  const Gmaps({super.key});
+  final String id;
+  const Gmaps({super.key, required this.id});
 
   // static const LatLng sourceLocation = LatLng(37.33, -122.0);
 
@@ -134,22 +110,8 @@ class _GmapsState extends State<Gmaps> {
     super.initState();
     // below code updates list
     // so our application updates this when reached the page
-    addresses = [
-      "Santa Clara, CA",
-      "Seattle, WA",
-      "Santa Cruz, CA",
-      "Woodinville, WA",
-      "Bothell, WA"
-    ];
-    locations = [
-      LatLng(37.33, -122.0),
-      LatLng(38, -122.0),
-      LatLng(37.1, -122),
-      LatLng(37.3, -122.0),
-      LatLng(37.5, -122.0)
-    ];
-    // getCurrentLocation();
-    getBestWaypoints(addresses);
+
+    // notice we're not just updating icons we also have to fetch addresses
     print('running');
   }
 
@@ -192,7 +154,8 @@ class _GmapsState extends State<Gmaps> {
   }*/
 
   // constant updates
-  List<MarkerData> getMarkers() {
+  List<MarkerData> getMarkers(List<dynamic> photoURLs, List<dynamic> addresses,
+      List<dynamic> locations) {
     // update every time we call this
     List<MarkerData> _customMarkers = [];
     // awesome now getting current location works!
@@ -200,6 +163,7 @@ class _GmapsState extends State<Gmaps> {
 
     for (int i = 0; i < addresses.length; i++) {
       // the first event organizer is the driver
+      // makes perfect sense!
       LatLng loc = locations[i];
       // if i is 0, then we grab it from current location
       /*if (i == 0) {
@@ -208,13 +172,14 @@ class _GmapsState extends State<Gmaps> {
       }*/
 
       // code to be executed after 2 seconds
+      // fetech photo urls
       _customMarkers.add(MarkerData(
           marker: Marker(
             markerId: MarkerId(addresses[i]),
             position: loc,
           ),
           // will need to fetch individually via url
-          child: _customMarker(profile.getProfileImage())));
+          child: _customMarker(profile.getProfileImage(photoURLs[i]))));
     }
 
     return _customMarkers;
@@ -223,6 +188,17 @@ class _GmapsState extends State<Gmaps> {
   // Hooray, google maps is working, let's now add some markers
   @override
   Widget build(BuildContext context) {
+    DatabaseMethods database = DatabaseMethods();
+
+    Future<List<dynamic>> photoURLS =
+        database.fetchStringArray(widget.id, "photoURL");
+    Future<List<dynamic>> names = database.fetchStringArray(widget.id, "names");
+    Future<List<dynamic>> adds =
+        database.fetchStringArray(widget.id, "locations");
+    Future<List<dynamic>> locations = database.fetchLocations(widget.id);
+    Future<List<dynamic>> orderedLocations =
+        database.fetchStringArray(widget.id, "orderedLocations");
+
     // getLocations();
     // print(addresses);
     // print(locations);
@@ -231,33 +207,55 @@ class _GmapsState extends State<Gmaps> {
       // Your Ride
       body: // currentLocation == null
           // ? const Center(child: Text("loading")) :
-          Stack(
-        children: [
-          CustomGoogleMapMarkerBuilder(
-            // screenshotDelay: const Duration(seconds: 4),
-            customMarkers: getMarkers(),
-            builder: (BuildContext context, Set<Marker>? markers) {
-              // null for brief sec
-              if (markers == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(locations[0].latitude, locations[0].longitude),
-                  zoom: 9,
-                ),
-                markers: markers,
-                // onMapCreated: (GoogleMapController mapController) {
-                // _controller.complete(mapController);
-                // },
-              );
-            },
-          ),
-          backButton(context),
-          // create another rounded rectangle all the way at the bottom
-          driveBar(),
-        ],
-      ),
+          FutureBuilder(
+              // also last thing we have to do is fetch locations
+              future: Future.wait(
+                  [photoURLS, names, adds, locations, orderedLocations]),
+              builder: (context, snapshot) {
+                if (snapshot.data == null) {
+                  return const Center(
+                      child: CircularProgressIndicator(
+                    color: Colors.blue,
+                  ));
+                }
+
+                return Stack(
+                  children: [
+                    CustomGoogleMapMarkerBuilder(
+                      // screenshotDelay: const Duration(seconds: 4),
+                      customMarkers: getMarkers(snapshot.data![0],
+                          snapshot.data![2], snapshot.data![3]),
+                      builder: (BuildContext context, Set<Marker>? markers) {
+                        // null for brief sec
+                        if (markers == null) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                        return GoogleMap(
+                          initialCameraPosition: CameraPosition(
+                            // first locations
+                            target: snapshot.data![3][0],
+                            zoom: 9,
+                          ),
+                          markers: markers,
+                          // onMapCreated: (GoogleMapController mapController) {
+                          // _controller.complete(mapController);
+                          // },
+                        );
+                      },
+                    ),
+                    Column(
+                      children: [
+                        SizedBox(height: 20),
+                        backButton(context, Colors.white),
+                      ],
+                    ),
+                    // create another rounded rectangle all the way at the bottom
+                    driveBar(snapshot.data![0], snapshot.data![1],
+                        snapshot.data![4]),
+                  ],
+                );
+              }),
     );
   }
 
@@ -276,30 +274,8 @@ class _GmapsState extends State<Gmaps> {
     );
   }
 
-  GestureDetector backButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-      },
-      // should reformat this to an icon
-      child: Stack(alignment: Alignment.center, children: [
-        // create a small rounded box and a icon
-        Container(
-          margin: EdgeInsets.all(10),
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        // here's where the icon should go!
-        Icon(Icons.arrow_left, color: Colors.blue, size: 40)
-      ]),
-    );
-  }
-
-  Column driveBar() {
+  Column driveBar(List<dynamic> photoURLS, List<dynamic> names,
+      List<dynamic> orderedLocations) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -327,7 +303,7 @@ class _GmapsState extends State<Gmaps> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text('The Walnut Creek Trip',
+                          child: Text('The ${orderedLocations.last} Trip',
                               style: TextStyle(
                                   fontSize: 25,
                                   color: Colors.black,
@@ -336,7 +312,8 @@ class _GmapsState extends State<Gmaps> {
                         SizedBox(width: 20),
                         GestureDetector(
                           onTap: () {
-                            launchURL(generateUrl(addresses));
+                            // ooh still have to do this
+                            launchURL(generateUrl(orderedLocations));
                           },
                           child: Column(
                             children: [
@@ -367,7 +344,7 @@ class _GmapsState extends State<Gmaps> {
                     ),
 
                     // here we add the circle icons
-                    circlesOverlap(Colors.white),
+                    circlesOverlap(Colors.white, photoURLS),
                     Text(generateNames(names),
                         style: TextStyle(
                             color: Colors.black,
@@ -382,13 +359,39 @@ class _GmapsState extends State<Gmaps> {
   }
 }
 
+// want to use back button in other pages as well
+// cause it's awesome!
+GestureDetector backButton(BuildContext context, Color color) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.pop(context);
+    },
+    // should reformat this to an icon
+    child: Stack(alignment: Alignment.center, children: [
+      // create a small rounded box and a icon
+      Container(
+        margin: EdgeInsets.all(10),
+        height: 50,
+        width: 50,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      // here's where the icon should go!
+      Icon(Icons.arrow_left, color: Colors.blue, size: 40)
+    ]),
+  );
+}
+
 // defined globally so we can use in gmaps
 // right now using the same images
-Container circlesOverlap(Color color) {
+Container circlesOverlap(Color color, List<dynamic> photoURLs) {
   return Container(
       padding: EdgeInsets.all(10),
       child: Row(children: [
-        for (int i = 0; i < 5; i++)
+        // notice we're not at i < 5 anymore ouch
+        for (int i = 0; i < photoURLs.length; i++)
           Align(
               widthFactor: 0.5,
               child: CircleAvatar(
@@ -396,11 +399,11 @@ Container circlesOverlap(Color color) {
                 backgroundColor: color,
                 // only need to fetch once
                 child: CircleAvatar(
-                    // actually have to fetch urls here
-                    radius: 25,
-                    backgroundImage: profile.getProfileImage().image
-                    // AssetImage(images[i])
-                    ),
+                  // actually have to fetch urls here
+                  radius: 25,
+                  backgroundImage: profile.getProfileImage(photoURLs[i]).image,
+                  // AssetImage(images[i])
+                ),
               ))
       ]));
 }

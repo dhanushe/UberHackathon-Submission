@@ -7,17 +7,11 @@ class CarpoolCard extends StatelessWidget {
     super.key,
     required this.address,
     required this.totalPeopleCount,
-    required this.date1,
-    required this.date2,
-    required this.date3,
     required this.undecidedDate,
   });
 
   String address;
   int totalPeopleCount = 5;
-  String date1;
-  String date2;
-  String date3;
   String undecidedDate;
 
   @override

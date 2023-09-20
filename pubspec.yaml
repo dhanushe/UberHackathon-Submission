@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.0.6 <4.0.0'
 
 dependencies:
+  pinput: ^3.0.1
   cloud_firestore: ^4.9.1
   feather_icons: ^1.2.0
   firebase_auth: ^4.9.0
