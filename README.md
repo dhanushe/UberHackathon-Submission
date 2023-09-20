@@ -26,7 +26,7 @@ Before you can run Carpoolz, you'll need to have the following installed:
 4. Run the app
 ```flutter run```
 
-# Usage
+## Usage
 The main features of the app include:
 
 1. Join upcoming carpools using a 4-digit pincode
@@ -34,3 +34,12 @@ The main features of the app include:
 3. Enter three possible dates that you can make it to the trip
 4. Generate a plan based on the largest overlaps in availability
 5. Calculate the most efficient route through all houses and the destination
+
+
+## License
+This project is licensed under the MIT License - see LICENSE.md for details.
+
+## Contact
+If you have any questions or issues, please reach out at:
+
+Emails: dhanush.eashwar@gmail.com, mundra.akshat@gmail.com
