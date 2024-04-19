@@ -40,7 +40,7 @@ class _CarpoolHomeState extends State<CarpoolHome> {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Scaffold.of(context).showBottomSheet<void>(
+          Scaffold.of(context).showBottomSheet(
             (BuildContext context) {
               return NewTripModal();
             },
@@ -235,16 +235,16 @@ class _NewTripModalState extends State<NewTripModal> {
             // Date Selection
             GestureDetector(
               onTap: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime(2024),
-                );
-                if (pickedDate != null && pickedDate != selectedDate1)
-                  setState(() {
-                    selectedDate1 = pickedDate;
-                  });
+                // final DateTime? pickedDate = await showDatePicker(
+                //   context: context,
+                //   initialDate: DateTime.now(),
+                //   firstDate: DateTime.now(),
+                //   lastDate: DateTime(2024),
+                // );
+                // if (pickedDate != null && pickedDate != selectedDate1)
+                //   setState(() {
+                //     selectedDate1 = pickedDate;
+                //   });
               },
               child: FractionallySizedBox(
                 widthFactor: 0.75,
